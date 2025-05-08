@@ -25,16 +25,18 @@ FUNNEL_CENTER_X = MAIN_AREA_WIDTH / 2  # X-coordinate of the funnel's center
 FUNNEL_OPENING_LEFT = FUNNEL_CENTER_X - (FUNNEL_END_WIDTH / 2)  # Left edge of the funnel's bottom opening
 FUNNEL_OPENING_RIGHT = FUNNEL_CENTER_X + (FUNNEL_END_WIDTH / 2)  # Right edge of the funnel's bottom opening
 GRAVITY = 900  # Gravity strength in the physics simulation
-ELASTICITY = 0.8  # Elasticity for collisions (bounciness)
+ELASTICITY = 0.9  # Elasticity for collisions (bounciness)
 MIN_LINE_SPACING = 20  # Minimum spacing between lines in the info panel
 SCROLL_AREA_HEIGHT = SCREEN_HEIGHT - 100  # Height of the scrollable area for URLs
 FADE_START_Y = SCROLL_AREA_HEIGHT - (6 * MIN_LINE_SPACING)  # Y-coordinate where fading starts
 FADE_END_Y = SCROLL_AREA_HEIGHT  # Y-coordinate where fading ends (text becomes fully transparent)
-MAX_URL_LENGTH = 30  # Maximum length for displayed URLs
-MAX_BALL_RADIUS = 50  # Maximum radius for balls to prevent oversized balls
+MAX_URL_LENGTH = 35  # Maximum length for displayed URLs
+MAX_BALL_RADIUS = 60  # Maximum radius for balls to prevent oversized balls
 SUBSTEPS = 5  # Number of physics substeps per frame for better collision detection
 WALL_THICKNESS = 10  # Thickness of the funnel walls (increased to prevent clipping)
 DESPAWN_TIME = 10  # Time in seconds after which objects are despawned if still on screen
+BALL_SPAWN_VX = -250  # Base horizontal spawn velocity for balls (negative for leftward motion)
+BALL_SPAWN_VX_RANGE = (-200, 100)  # Randomization range for horizontal spawn velocity
 
 # Function: format_size
 # Description: Converts a byte size into a human-readable format (e.g., B, KB, MB, GB, TB).
@@ -47,6 +49,8 @@ def format_size(size):
         converted_size /= 1024
         unit_index += 1
     return f"{converted_size:.1f} {units[unit_index]}"
+
+
 
 class LogVisualizer:
     def __init__(self, test_mode=False):
@@ -229,8 +233,8 @@ class LogVisualizer:
             
             # Set the initial position in the top-right corner of the physics area
             self.body.position = (MAIN_AREA_WIDTH - 20 - self.radius, random.uniform(20, 50))
-            # Set initial velocity (moving left with a random vertical component)
-            vx = -200 + random.uniform(-50, 0)
+            # Set initial velocity using BALL_SPAWN_VX with randomization
+            vx = BALL_SPAWN_VX + random.uniform(BALL_SPAWN_VX_RANGE[0], BALL_SPAWN_VX_RANGE[1])
             vy = random.uniform(-50, 50)
             self.body.velocity = (vx, vy)
             
