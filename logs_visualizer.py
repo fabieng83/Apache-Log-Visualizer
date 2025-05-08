@@ -53,7 +53,7 @@ class LogVisualizer:
         # Initialize Pygame for rendering graphics
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        pygame.display.set_caption("glTail-inspired Log Visualizer")
+        pygame.display.set_caption("Log Visualizer")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont("Arial", 14)
         
@@ -179,18 +179,16 @@ class LogVisualizer:
             
             # Define the shape based on the request method and status
             if self.method == 'POST':
-                # Create a triangle (head) with a tail for POST requests
-                head_vertices = [(0, -15), (-15, 15), (15, 15)]
-                inertia = pymunk.moment_for_poly(mass, head_vertices)
+                arrow_vertices = [(0, -15), (10, 5), (5, 5), (5, 15), (-5, 15), (-5, 5), (-10, 5), (0, -15)]
+                scale_factor = 2
+                scaled_arrow_vertices = [(x * scale_factor, y * scale_factor) for x, y in arrow_vertices]
+                
+                inertia = pymunk.moment_for_poly(mass, arrow_vertices)
                 self.body = pymunk.Body(mass, inertia)
-                self.head_shape = pymunk.Poly(self.body, head_vertices)
-                self.tail_shape = pymunk.Segment(self.body, (0, 15), (0, 35), 6)
-                self.head_shape.elasticity = ELASTICITY
-                self.head_shape.friction = 0.5
-                self.tail_shape.elasticity = ELASTICITY
-                self.tail_shape.friction = 0.5
-                self.head_shape.color = self.color + (255,)
-                self.tail_shape.color = self.color + (255,)
+                self.arrow_shape = pymunk.Poly(self.body, arrow_vertices)
+                self.arrow_shape.elasticity = ELASTICITY
+                self.arrow_shape.friction = 0.5
+                self.arrow_shape.color = self.color + (255,)
             elif self.method == 'DELETE':
                 # Create an "X" shape for DELETE requests
                 self.body = pymunk.Body(mass, pymunk.moment_for_box(mass, (30, 30)))
@@ -244,7 +242,7 @@ class LogVisualizer:
             
             # Add the shape to the physics space
             if self.method == 'POST':
-                visualizer.space.add(self.body, self.head_shape, self.tail_shape)
+                visualizer.space.add(self.body, self.arrow_shape)
             elif self.method == 'DELETE':
                 visualizer.space.add(self.body, self.shape1, self.shape2)
             else:
@@ -305,7 +303,7 @@ class LogVisualizer:
                 if (pos.y > SCREEN_HEIGHT and 
                     FUNNEL_OPENING_LEFT <= pos.x <= FUNNEL_OPENING_RIGHT):
                     if ball.method == 'POST':
-                        self.space.remove(ball.head_shape, ball.tail_shape, ball.body)
+                        self.space.remove(ball.arrow_shape, ball.body)
                     elif ball.method == 'DELETE':
                         self.space.remove(ball.shape1, ball.shape2, ball.body)
                     else:
@@ -314,7 +312,7 @@ class LogVisualizer:
                 # Despawn balls that have been on screen for more than DESPAWN_TIME seconds
                 elif (current_time - ball.spawn_time) > DESPAWN_TIME:
                     if ball.method == 'POST':
-                        self.space.remove(ball.head_shape, ball.tail_shape, ball.body)
+                        self.space.remove(ball.arrow_shape, ball.body)
                     elif ball.method == 'DELETE':
                         self.space.remove(ball.shape1, ball.shape2, ball.body)
                     else:
@@ -331,8 +329,7 @@ class LogVisualizer:
             # Draw all balls
             for ball in self.balls:
                 if ball.method == 'POST':
-                    self.draw_shape(ball.head_shape, ball.color)
-                    self.draw_shape(ball.tail_shape, ball.color)
+                    self.draw_shape(ball.arrow_shape, ball.color)
                 elif ball.method == 'DELETE':
                     self.draw_shape(ball.shape1, ball.color)
                     self.draw_shape(ball.shape2, ball.color)
@@ -402,7 +399,7 @@ class LogVisualizer:
 
 # Main execution block for Pyodide compatibility
 if platform.system() == "Emscripten":
-    parser = argparse.ArgumentParser(description="glTail-inspired Log Visualizer")
+    parser = argparse.ArgumentParser(description="Log Visualizer")
     parser.add_argument('--test', action='store_true', help="Run in test mode with simulated requests")
     args = parser.parse_args()
 
@@ -410,7 +407,7 @@ if platform.system() == "Emscripten":
     asyncio.ensure_future(visualizer.run())
 else:
     if __name__ == "__main__":
-        parser = argparse.ArgumentParser(description="glTail-inspired Log Visualizer")
+        parser = argparse.ArgumentParser(description="Log Visualizer")
         parser.add_argument('--test', action='store_true', help="Run in test mode with simulated requests")
         args = parser.parse_args()
 
