@@ -55,6 +55,14 @@ class LogVisualizer:
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Log Visualizer")
+        
+        # Load and set the window icon
+        try:
+            icon = pygame.image.load("funnel.png")
+            pygame.display.set_icon(icon)
+        except pygame.error as e:
+            print(f"Warning: Could not load icon 'funnel.png': {e}")
+        
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont("Arial", 14)
         
