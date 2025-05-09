@@ -25,18 +25,15 @@ FUNNEL_CENTER_X = MAIN_AREA_WIDTH / 2  # X-coordinate of the funnel's center
 FUNNEL_OPENING_LEFT = FUNNEL_CENTER_X - (FUNNEL_END_WIDTH / 2)  # Left edge of the funnel's bottom opening
 FUNNEL_OPENING_RIGHT = FUNNEL_CENTER_X + (FUNNEL_END_WIDTH / 2)  # Right edge of the funnel's bottom opening
 GRAVITY = 900  # Gravity strength in the physics simulation
-ELASTICITY = 0.9  # Elasticity for collisions (bounciness)
+ELASTICITY = 0.8  # Elasticity for collisions (bounciness)
 MIN_LINE_SPACING = 20  # Minimum spacing between lines in the info panel
 SCROLL_AREA_HEIGHT = SCREEN_HEIGHT - 100  # Height of the scrollable area for URLs
 FADE_START_Y = SCROLL_AREA_HEIGHT - (6 * MIN_LINE_SPACING)  # Y-coordinate where fading starts
 FADE_END_Y = SCROLL_AREA_HEIGHT  # Y-coordinate where fading ends (text becomes fully transparent)
-MAX_URL_LENGTH = 35  # Maximum length for displayed URLs
-MAX_BALL_RADIUS = 60  # Maximum radius for balls to prevent oversized balls
+MAX_URL_LENGTH = 30  # Maximum length for displayed URLs
 SUBSTEPS = 5  # Number of physics substeps per frame for better collision detection
 WALL_THICKNESS = 10  # Thickness of the funnel walls (increased to prevent clipping)
 DESPAWN_TIME = 10  # Time in seconds after which objects are despawned if still on screen
-BALL_SPAWN_VX = -250  # Base horizontal spawn velocity for balls (negative for leftward motion)
-BALL_SPAWN_VX_RANGE = (-200, 100)  # Randomization range for horizontal spawn velocity
 
 # Function: format_size
 # Description: Converts a byte size into a human-readable format (e.g., B, KB, MB, GB, TB).
@@ -49,8 +46,6 @@ def format_size(size):
         converted_size /= 1024
         unit_index += 1
     return f"{converted_size:.1f} {units[unit_index]}"
-
-
 
 class LogVisualizer:
     def __init__(self, test_mode=False):
@@ -165,16 +160,27 @@ class LogVisualizer:
             # Record the spawn time for despawning logic
             self.spawn_time = time.time()
             
-            # Calculate the ball's radius based on the request size relative to the max size seen
-            if visualizer.max_size_seen > 0:
-                # Limit scale to 1.0 to prevent oversized balls
-                scale = min(self.size / visualizer.max_size_seen, 1.0)
-                radius_range = MAX_BALL_RADIUS - 15
-                self.radius = 15 + (scale * radius_range)
+            # Define fixed radius based on size thresholds
+            size_thresholds = [
+                (10000, 15),      # < 10KB
+                (100000, 19),     # < 100KB
+                (200000, 23),     # < 200KB
+                (300000, 27),     # < 300KB
+                (500000, 31),     # < 500KB
+                (1000000, 35),    # < 1MB
+                (2000000, 39),    # < 2MB
+                (3000000, 43),    # < 3MB
+                (5000000, 47),    # < 5MB
+                (10000000, 50),   # ≥ 10MB
+            ]
+            # Find the appropriate radius based on size
+            self.radius = 15  # Default to smallest radius
+            for threshold, radius in size_thresholds:
+                if self.size < threshold:
+                    self.radius = radius
+                    break
             else:
-                self.radius = 15
-            # Ensure the radius never exceeds MAX_BALL_RADIUS
-            self.radius = min(self.radius, MAX_BALL_RADIUS)
+                self.radius = 50  # For sizes ≥ 10MB
             # Fixed radius for POST, DELETE, and 404 requests
             if self.status == 404 or self.method in ['POST', 'DELETE']:
                 self.radius = 15
@@ -233,8 +239,8 @@ class LogVisualizer:
             
             # Set the initial position in the top-right corner of the physics area
             self.body.position = (MAIN_AREA_WIDTH - 20 - self.radius, random.uniform(20, 50))
-            # Set initial velocity using BALL_SPAWN_VX with randomization
-            vx = BALL_SPAWN_VX + random.uniform(BALL_SPAWN_VX_RANGE[0], BALL_SPAWN_VX_RANGE[1])
+            # Set initial velocity (moving left with a random vertical component)
+            vx = -200 + random.uniform(-50, 0)
             vy = random.uniform(-50, 50)
             self.body.velocity = (vx, vy)
             
