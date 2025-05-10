@@ -88,6 +88,7 @@ class LogVisualizer:
         self.url_positions = []  # List to store URL positions for scrolling
         self.request_times = deque(maxlen=3600)  # Store timestamps of requests (last 1 hour)
         self.max_size_seen = 1000  # Track the largest request size seen
+        self.max_size_url = ""  # Track the URL associated with the largest request size
         self.colors = [
             (255, 0, 0), (0, 255, 0), (0, 0, 255),
             (255, 255, 0), (255, 0, 255), (0, 255, 255)
@@ -287,15 +288,18 @@ class LogVisualizer:
                 if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                     running = False
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_r:
-                    # Reset max_size_seen when the 'R' key is pressed
+                    # Reset max_size_seen and max_size_url when the 'R' key is pressed
                     self.max_size_seen = 1000
+                    self.max_size_url = ""
             
             # Add new balls from the log queue
             while not self.log_queue.empty() and len(self.balls) < MAX_BALLS:
                 log_data = self.log_queue.get()
                 self.balls.append(self.Ball(self, log_data))
-                # Update the largest request size seen
-                self.max_size_seen = max(self.max_size_seen, log_data['size'])
+                # Update the largest request size seen and its associated URL
+                if log_data['size'] > self.max_size_seen:
+                    self.max_size_seen = log_data['size']
+                    self.max_size_url = log_data['url']
                 self.recent_urls.append((log_data['url'], log_data['size']))
                 # Shift all existing URLs downward
                 for i in range(len(self.url_positions)):
@@ -398,6 +402,7 @@ class LogVisualizer:
             recent_requests = sum(1 for t in self.request_times if current_time - t < 60)
             stats = [
                 f"Max Size: {format_size(self.max_size_seen)}",
+                f"File: {self.max_size_url[:MAX_URL_LENGTH]}{'...' if len(self.max_size_url) > MAX_URL_LENGTH else ''}",
                 f"Requests/min: {recent_requests}",
             ]
             recent_requests = sum(1 for t in self.request_times if current_time - t < 1)
