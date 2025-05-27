@@ -250,7 +250,7 @@ class LogVisualizer:
             
             # Set the initial position in the top-right corner of the physics area
             self.body.position = (MAIN_AREA_WIDTH - 20 - self.radius, random.uniform(20, 50))
-             # Set initial velocity using BALL_SPAWN_VX with randomization
+            # Set initial velocity using BALL_SPAWN_VX with randomization
             vx = BALL_SPAWN_VX + random.uniform(BALL_SPAWN_VX_RANGE[0], BALL_SPAWN_VX_RANGE[1])
             vy = random.uniform(-50, 50)
             self.body.velocity = (vx, vy)
@@ -399,14 +399,16 @@ class LogVisualizer:
             y_offset = SCREEN_HEIGHT - 100
             # Calculate request rates (requests per minute and per second)
             current_time = time.time()
-            recent_requests = sum(1 for t in self.request_times if current_time - t < 60)
+            request_times_copy = list(self.request_times)  # Create a copy to avoid mutation during iteration
+            requests_per_min = sum(1 for t in request_times_copy if current_time - t < 60)
+            requests_per_sec = sum(1 for t in request_times_copy if current_time - t < 1)
+            
             stats = [
                 f"Max Size: {format_size(self.max_size_seen)}",
                 f"File: {self.max_size_url[:MAX_URL_LENGTH]}{'...' if len(self.max_size_url) > MAX_URL_LENGTH else ''}",
-                f"Requests/min: {recent_requests}",
+                f"Requests/min: {requests_per_min}",
+                f"Requests/sec: {requests_per_sec}",
             ]
-            recent_requests = sum(1 for t in self.request_times if current_time - t < 1)
-            stats.append(f"Requests/sec: {recent_requests}")
             
             # Draw each stat line
             for stat in stats:
